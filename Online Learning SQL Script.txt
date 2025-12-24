@@ -1,0 +1,409 @@
+/*
+============================================================
+ONLINE LEARNIING COMPLETION VS DROPOUT ANALYSIS
+============================================================
+Author      : TOLULOPE EMULEOMO (NAIJA DATA PROFESSOR)
+Project     : Online Learning  Completion VS Dropout Analysis
+Database    : MySQL
+Description : 
+This project analyzes learner engagement, course completion, and dropout patterns 
+across multiple online learning platforms including Coursera, Skillshare, Udemy, 
+edX, and YouTube. Using a dataset of 500 learner observations, the analysis focuses on:
+
+- Completion rates per platform
+- Dropout reasons and patterns
+- Completion rates by learner experience level
+- Comparison of Tech vs Non-Tech courses
+
+The project aims to provide actionable insights for learners, tutors, and platforms 
+to improve course design, learner engagement, and retention. By understanding 
+completion trends and dropout drivers, platforms can optimize learning experiences, 
+enhance learner satisfaction, and support professional or academic growth.
+*/
+
+
+
+/*
+Business Question:
+Why do learners dropout and what factors drive course completion
+
+Analysis
+-- Completion Rate Per Platform
+-- Dropout Reasons 
+-- Completion Rate By Experience Level 
+-- Tech vs Non Tech Completion Comaprison
+*/
+
+CREATE DATABASE IF NOT EXISTS Online_Studies;
+
+USE online_studies;
+
+CREATE TABLE IF NOT EXISTS learners_dataset
+(
+userid VARCHAR(220),
+experiencelevel VARCHAR(220),
+coursetype VARCHAR(220),
+platform VARCHAR(220),
+hourspentperweek VARCHAR(220),
+coursedurationperweek VARCHAR(220),
+completionstatus VARCHAR(220),
+completionpercentage VARCHAR(220),
+dropoutreason VARCHAR(220),
+satisfactionscore VARCHAR(220)
+);
+
+
+--- "C:/ProgramData/MySQL/MySQL Server 9.3/Uploads/online_learning_course_consumption_dataset.csv"
+
+LOAD DATA INFILE "C:/ProgramData/MySQL/MySQL Server 9.3/Uploads/online_learning_course_consumption_dataset.csv"
+INTO TABLE learners_dataset
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS;
+
+
+SELECT *
+FROM learners_dataset;
+
+CREATE TEMPORARY TABLE dataset AS(
+SELECT *
+FROM learners_dataset
+);
+
+--- Total Number of observations 
+SELECT COUNT(userid) AS Total_User
+FROM dataset;
+
+/*
+SAMPLE SIZE ADEQUACY INTERPRETATION
+
+A total of 500 observations provides an adequate sample size
+for reliable descriptive and comparative analysis.
+
+This sample size is sufficiently large to:
+- Capture meaningful patterns and trends in the data
+- Reduce the influence of random variation and outliers
+- Support stable average, percentage, and rate-based metrics
+
+With 500 records, the findings can be considered statistically
+reasonable for exploratory analysis and platform-level
+performance comparison, while maintaining analytical validity.
+*/
+
+
+
+--- Total Number of Learning Plaforms 
+SELECT COUNT(*) AS platform_Count
+FROM (
+		SELECT DISTINCT platform
+        FROM dataset) AS platforms;
+        
+/*
+QUERY RESULT INTERPRETATION: TOTAL NUMBER OF LEARNING PLATFORMS
+
+The query result shows that there are 5 distinct learning
+platforms represented in the dataset.
+
+This indicates that the analysis is based on a multi-platform
+environment, allowing for meaningful comparison of learner
+behavior, engagement, and completion rates across platforms.
+
+Having 5 platforms provides:
+- Adequate diversity for comparative analysis
+- Reduced platform-level bias
+- A balanced structure for platform performance evaluation
+
+This count confirms that the dataset is suitable for
+cross-platform analytical insights and benchmarking.
+*/
+
+        
+--- List of Platforms 
+SELECT DISTINCT platform
+FROM dataset;
+
+/*
+QUERY RESULT INTERPRETATION: LIST OF LEARNING PLATFORMS
+
+The DISTINCT query identifies the five learning platforms
+included in the dataset:
+
+- Skillshare
+- edX
+- Coursera
+- Udemy
+- YouTube
+
+This confirms that the dataset captures learner activity
+across both formal and informal online learning platforms.
+
+The presence of:
+- Structured academic platforms (Coursera, edX)
+- Skill-based marketplaces (Udemy, Skillshare)
+- Open, free learning platforms (YouTube)
+
+provides a well-rounded basis for comparative analysis of
+learner engagement and course completion behavior.
+
+This diversity strengthens the validity of cross-platform
+insights and supports meaningful benchmarking across
+different learning models.
+*/
+
+
+--- Total Number of Completed Courses Across all Platforms 
+SELECT COUNT(*) AS Completed_Courses
+FROM dataset
+WHERE completionstatus = "Completed";
+
+/*
+QUERY RESULT INTERPRETATION: TOTAL NUMBER OF COMPLETED COURSES
+
+The query result shows that there are 156 courses marked as
+"Completed" across all platforms in the dataset.
+
+Analytical Insight:
+- Out of the total 500 observations, 156 completions represent
+  the subset of learners who fully finished their courses.
+- This provides an overall completion rate of approximately:
+  (156 / 500) * 100 ≈ 31.2%
+- The completion count is crucial for assessing learner engagement
+  and the effectiveness of course structure and incentives.
+- Platforms with higher completion counts can be identified
+  for best practices in course design and learner motivation.
+
+This information can be used for further cross-platform
+comparisons, cohort analysis, and performance benchmarking.
+*/
+
+
+--- Total Courses Completed Per Platform 
+SELECT platform, COUNT(*) AS completed_courses, ROUND(AVG(completionpercentage),2) AS average_completion_percentage
+FROM dataset
+WHERE completionstatus = "Completed"
+GROUP BY platform
+ORDER BY completed_courses DESC;
+
+/*
+QUERY RESULT INTERPRETATION: TOTAL COURSES COMPLETED PER PLATFORM WITH AVERAGE COMPLETION PERCENTAGE
+
+The query provides both the number of completed courses and the average completion percentage for each platform:
+
+- edX: 38 completed courses, average completion 58.84%
+- Coursera: 33 completed courses, average completion 66.7%
+- Skillshare: 29 completed courses, average completion 66.48%
+- Udemy: 28 completed courses, average completion 60.21%
+- YouTube: 28 completed courses, average completion 65.32%
+
+Analytical Insights:
+
+1. edX has the highest number of completed courses (38), but its average completion percentage (58.84%) is lower than Coursera, Skillshare, and YouTube. 
+This suggests that while more learners attempt edX courses, completion is less consistent.
+
+2. Coursera and Skillshare have slightly fewer completed courses but maintain the highest average completion percentages (66.7% and 66.48% respectively), 
+indicating strong engagement and effective course structure.
+
+3. Udemy and YouTube have similar completed course counts (28), with YouTube showing a slightly higher average completion rate (65.32% vs 60.21%), 
+reflecting more targeted or concise learning content that maintains engagement.
+
+4. Overall, platforms with structured guidance, incentives, and interactive learning content (Coursera, Skillshare, YouTube) tend to achieve higher average completion percentages, 
+even if the absolute number of completed courses is lower.
+
+Business Insight:
+Combining completion counts with average completion percentages provides a comprehensive understanding of learner engagement. 
+Platforms can use these insights to balance course accessibility, content quality, and learner support to maximize both enrollment and completion effectiveness.
+*/
+
+
+
+--- Most Common Dropout Reasons 
+SELECT dropoutreason AS dropout_reasons, COUNT(dropoutreason) AS count 
+FROM dataset
+WHERE dropoutreason <> "No Dropout"
+GROUP BY dropout_reasons
+ORDER BY count DESC;
+
+/*
+QUERY RESULT INTERPRETATION: MOST COMMON DROPOUT REASONS
+
+The query identifies the primary reasons learners dropped out of courses:
+
+- Time Constraint: 47 learners
+- Too Difficult: 47 learners
+- Lost Interest: 35 learners
+
+Analytical Insights:
+
+1. Time Constraint and Course Difficulty are tied as the top reasons
+   for dropout, indicating that many learners struggle to allocate
+   enough time or face challenges with the course material.
+
+2. Loss of Interest accounts for a significant portion of dropouts,
+   highlighting the importance of engaging content, interactive
+   materials, and motivation mechanisms.
+
+3. Understanding these dropout patterns helps platforms:
+   - Adjust course length and pacing
+   - Offer flexible learning schedules
+   - Improve content design to maintain learner interest
+
+Business Insight:
+Addressing the top dropout reasons can increase course completion
+rates, enhance learner satisfaction, and improve overall platform
+retention.
+*/
+
+
+--- Number of User who lost Interest Per Platforms
+SELECT platform, COUNT(userid) user_count
+FROM dataset 
+WHERE dropoutreason = "Lost Interest"
+GROUP BY platform
+ORDER BY user_count DESC;
+
+
+/*
+QUERY RESULT INTERPRETATION: USERS WHO LOST INTEREST PER PLATFORM
+
+The query identifies how many learners dropped out due to loss of interest on each platform:
+
+- Skillshare: 8 users
+- edX: 8 users
+- Coursera: 7 users
+- Udemy: 7 users
+- YouTube: 5 users
+
+Analytical Insights:
+
+1. Skillshare and edX have the highest number of learners losing interest,
+   suggesting that maintaining engagement may be a challenge for these platforms.
+
+2. Coursera and Udemy follow closely, while YouTube has the lowest count,
+   which may reflect shorter or more targeted learning experiences.
+
+3. Monitoring dropout due to loss of interest is essential for:
+   - Improving content design and interactivity
+   - Enhancing learner motivation and engagement
+   - Reducing overall course abandonment
+
+Business Insight:
+By identifying platforms with higher disengagement, platform managers
+can implement strategies to retain learners, such as gamification,
+shorter modules, or more interactive content.
+*/
+
+--- Average Course Completion Percentage VS Experience Level 
+SELECT experiencelevel AS experience_level, ROUND(AVG(completionpercentage),2) AS completion_percentage
+FROM dataset
+GROUP BY experience_level
+ORDER BY completion_percentage DESC;
+
+/*
+QUERY RESULT INTERPRETATION: AVERAGE COURSE COMPLETION PERCENTAGE VS EXPERIENCE LEVEL
+
+The query calculates the average completion percentage for learners grouped by their experience level:
+
+- Working Professional: 51.97%
+- Fresher: 50.67%
+- Student: 48.62%
+
+Analytical Insights:
+
+1. Working Professionals have the highest average completion percentage,
+   indicating higher motivation, discipline, or relevance of the courses
+   to their career goals.
+
+2. Freshers show slightly lower completion, possibly due to limited
+   experience in managing self-paced learning or balancing multiple tasks.
+
+3. Students have the lowest completion percentage, which may reflect
+   competing academic commitments, lower engagement, or lack of
+   immediate professional incentive.
+
+4. Overall, learners with more experience tend to complete courses
+   more effectively, highlighting the importance of aligning course
+   content with learner motivation and career relevance.
+
+Business Insight:
+Tailoring course content and support based on learner experience
+can improve completion rates, e.g., providing flexible pacing for
+students and advanced, practical content for working professionals.
+*/
+
+
+--- Tech vs Non Tech Completion Comaprison
+SELECT coursetype AS course_type, COUNT(*) AS completed_course, ROUND(AVG(completionpercentage),2) AS completion_rate
+FROM dataset
+WHERE completionstatus = "Completed"
+GROUP BY course_type
+ORDER BY completed_course DESC;
+
+
+/*
+QUERY RESULT INTERPRETATION: TECH VS NON-TECH COURSE COMPLETION
+
+The query compares completed courses and average completion rates for Tech and Non-Tech courses:
+
+- Non-Tech: 96 completed courses, average completion rate 66.19%
+- Tech: 60 completed courses, average completion rate 58.77%
+
+Analytical Insights:
+
+1. Non-Tech courses have both higher completion counts and higher
+   average completion rates, suggesting that learners find them
+   more engaging or easier to complete.
+
+2. Tech courses show lower completion rates and counts, which may
+   be due to higher complexity, technical challenges, or prerequisite
+   knowledge requirements.
+
+3. This highlights the importance of:
+   - Providing additional support or resources for Tech learners
+   - Structuring Tech courses to enhance accessibility and motivation
+   - Balancing course difficulty to reduce dropout rates
+
+Business Insight:
+Understanding the difference in completion between Tech and Non-Tech
+courses can guide content strategy, learner support initiatives, and
+resource allocation to improve overall course completion.
+*/
+
+
+/*
+============================================================
+RECOMMENDATIONS & CONCLUSION
+============================================================
+
+RECOMMENDATIONS
+
+1. For Learners:
+   - Time Management: Allocate regular study hours to prevent dropouts due to time constraints.
+   - Engagement: Actively participate in projects, quizzes, and discussions to maintain interest.
+   - Course Selection: Choose courses suitable for experience level; working professionals may prefer advanced, career-oriented courses, 
+   while students can start with structured, shorter courses.
+   - Skill Alignment: Pick courses appropriate to current knowledge to avoid frustration or incomplete learning.
+
+2. For Tutors / Instructors:
+   - Course Structuring: Break complex or long courses into smaller, manageable modules to improve completion.
+   - Interactive Content: Include quizzes, assignments, and hands-on activities to increase learner engagement.
+   - Timely Feedback: Offer support and resources to help learners overcome challenges, particularly in difficult or technical courses.
+   - Monitoring Metrics: Track completion rates and dropout reasons to refine teaching methods and optimize learner success.
+
+3. For Platforms:
+   - Flexible Scheduling: Provide self-paced and modular courses to accommodate learners with limited time.
+   - Motivation Tools: Use gamification, certificates, and badges to maintain learner interest and encourage completion.
+   - Tech vs Non-Tech Strategy: Provide additional support for Tech courses (tutorials, mentorship), and highlight benefits of completing Non-Tech courses.
+   - Dropout Analysis: Regularly analyze dropout patterns to redesign courses, improve engagement, and enhance retention.
+   - Platform-Specific Optimization: Focus on content quality, interactivity, and guidance to boost average completion rates across platforms.
+
+CONCLUSION
+
+- Completion rates are highest on structured, guided platforms like Coursera and Skillshare, 
+while Tech courses and academic-intensive platforms like edX show lower completion despite higher attempt counts.
+- Learners most commonly drop out due to time constraints, course difficulty, or loss of interest, highlighting the need for engagement and flexibility.
+- Working professionals tend to complete courses more consistently than students or freshers, indicating experience and motivation influence outcomes.
+- Non-Tech courses are generally easier to complete than Tech courses, suggesting complexity and prerequisite knowledge impact learner retention.
+- Overall, aligning course content, platform support, and learner strategies can improve engagement, increase completion rates, reduce dropout, 
+and promote growth for both learners and platforms.
+*/
+
